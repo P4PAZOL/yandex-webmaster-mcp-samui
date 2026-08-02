@@ -190,6 +190,9 @@ export class YandexWebmasterClient {
     if (params.device_type_indicator) {
       extra.set('device_type_indicator', params.device_type_indicator);
     }
+    if (params.order_by) {
+      extra.set('order_by', params.order_by);
+    }
 
     const merged = mergeParams(
       buildPaginationParams(params),

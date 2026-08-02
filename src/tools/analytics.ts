@@ -5,6 +5,7 @@ import {
   optionalHostIdSchema,
   queryIndicatorSchema,
   deviceTypeSchema,
+  orderBySchema,
 } from '../utils/schemas.js';
 import { errorResult, jsonResult } from '../utils/tool-response.js';
 
@@ -53,6 +54,7 @@ export function registerAnalyticsTools(
       date_to: z.string().describe('End date (YYYY-MM-DD)'),
       query_indicator: queryIndicatorSchema,
       device_type_indicator: deviceTypeSchema,
+      order_by: orderBySchema,
       offset: z.number().int().min(0).optional().describe('Offset'),
       limit: z.number().int().min(1).max(500).optional().describe('Max results'),
     },
@@ -64,6 +66,7 @@ export function registerAnalyticsTools(
           date_to: params.date_to,
           query_indicator: params.query_indicator,
           device_type_indicator: params.device_type_indicator,
+          order_by: params.order_by,
           offset: params.offset,
           limit: params.limit,
         });

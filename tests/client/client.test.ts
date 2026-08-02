@@ -323,6 +323,24 @@ describe('YandexWebmasterClient', () => {
       expect(calledUrl).toContain('limit=50');
     });
 
+    // Регрессия: /search-queries/popular отвечает 400 «order_by: This field is
+    // required», если параметр не отправлен. В апстриме он не прокидывался вовсе,
+    // из-за чего инструмент популярных запросов не работал в принципе.
+    it('getPopularQueries sends order_by', async () => {
+      fetchMock.mockResolvedValueOnce(mockResponse(200, { queries: [] }));
+
+      await client.getPopularQueries('h1', {
+        date_from: '2026-07-25',
+        date_to: '2026-08-01',
+        query_indicator: 'TOTAL_SHOWS',
+        order_by: 'TOTAL_CLICKS',
+      });
+
+      const calledUrl = fetchMock.mock.calls[fetchMock.mock.calls.length - 1][0] as string;
+      expect(calledUrl).toContain('/search-queries/popular');
+      expect(calledUrl).toContain('order_by=TOTAL_CLICKS');
+    });
+
     it('getSearchQueries appends all query params', async () => {
       fetchMock.mockResolvedValueOnce(mockResponse(200, { queries: [] }));
 

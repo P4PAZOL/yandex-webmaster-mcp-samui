@@ -142,6 +142,9 @@ describe('Analytics MCP Tools', () => {
         date_to: '2024-04-01',
         query_indicator: 'AVG_SHOW_POSITION',
         device_type_indicator: 'MOBILE',
+        // Вызов не передавал order_by — подставилось значение по умолчанию из
+        // схемы. Без параметра Яндекс отвечает 400, поэтому дефолт обязателен.
+        order_by: 'TOTAL_SHOWS',
         offset: undefined,
         limit: undefined,
       });

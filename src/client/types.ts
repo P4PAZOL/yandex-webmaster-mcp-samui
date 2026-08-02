@@ -318,6 +318,8 @@ export interface SearchQueryParams {
   date_to: string;
   query_indicator: string;
   device_type_indicator?: string;
+  /** Обязателен для /search-queries/popular, игнорируется остальными ручками. */
+  order_by?: string;
   offset?: number;
   limit?: number;
 }
