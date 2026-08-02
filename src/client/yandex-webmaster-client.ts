@@ -1,35 +1,17 @@
 import { createApiError, YandexWebmasterError } from './errors.js';
 import type {
   UserInfo,
-  Host,
   HostList,
   HostSummary,
   Sitemap,
   SitemapList,
   IndexingStatus,
   SearchUrlList,
-  ImportantUrlList,
   SearchQueryResult,
   SearchQueryParams,
-  ExternalLinkList,
-  SQIHistory,
   DiagnosticsInfo,
   RecrawlQuota,
   RecrawlTask,
-  RecrawlTaskList,
-  OriginalText,
-  OriginalTexts,
-  OriginalTextQuota,
-  VerificationInfo,
-  OwnerList,
-  SearchEventList,
-  BrokenLinkList,
-  FeedList,
-  FeedUploadStatus,
-  QueryAnalyticsRequest,
-  QueryAnalyticsResult,
-  HistoryResponse,
-  BatchFeedResult,
   DateRange,
   Pagination,
 } from './types.js';
@@ -150,36 +132,14 @@ export class YandexWebmasterClient {
   // вырезаны из этого форка, поэтому клиент физически не умеет отправлять
   // DELETE — ошибка или галлюцинация агента не может ничего снести.
 
-  // --- User ---
-
-  async getUser(): Promise<UserInfo> {
-    return this.request<UserInfo>('GET', '/user/');
-  }
-
   // --- Hosts ---
 
   async listHosts(): Promise<HostList> {
     return this.get<HostList>('/hosts');
   }
 
-  async getHost(hostId: string): Promise<Host> {
-    return this.get<Host>(`/hosts/${hostId}`);
-  }
-
   async getHostSummary(hostId: string): Promise<HostSummary> {
     return this.get<HostSummary>(`/hosts/${hostId}/summary`);
-  }
-
-  // --- Verification ---
-
-  async getVerificationStatus(hostId: string): Promise<VerificationInfo> {
-    return this.get<VerificationInfo>(`/hosts/${hostId}/owner-verification`);
-  }
-
-  // --- Owners ---
-
-  async listOwners(hostId: string): Promise<OwnerList> {
-    return this.get<OwnerList>(`/hosts/${hostId}/owners`);
   }
 
   // --- Sitemaps ---
@@ -200,10 +160,6 @@ export class YandexWebmasterClient {
     return this.get<SitemapList>(`/hosts/${hostId}/user-added-sitemaps`);
   }
 
-  async getUserSitemap(hostId: string, sitemapId: string): Promise<Sitemap> {
-    return this.get<Sitemap>(`/hosts/${hostId}/user-added-sitemaps/${sitemapId}`);
-  }
-
   // --- Indexing ---
 
   async getIndexingHistory(hostId: string, params?: DateRange): Promise<IndexingStatus> {
@@ -216,40 +172,6 @@ export class YandexWebmasterClient {
     return this.get<SearchUrlList>(`/hosts/${hostId}/indexing/samples${qs}`);
   }
 
-  // --- Search URLs ---
-
-  async getSearchUrls(hostId: string, params?: Pagination): Promise<SearchUrlList> {
-    const qs = buildQueryString(params);
-    return this.get<SearchUrlList>(`/hosts/${hostId}/search-urls/in-search/samples${qs}`);
-  }
-
-  async getSearchUrlsHistory(hostId: string, params?: DateRange): Promise<HistoryResponse> {
-    const qs = buildQueryString(undefined, params);
-    return this.get<HistoryResponse>(`/hosts/${hostId}/search-urls/in-search/history${qs}`);
-  }
-
-  async getSearchEventsSamples(hostId: string, params?: Pagination): Promise<SearchEventList> {
-    const qs = buildQueryString(params);
-    return this.get<SearchEventList>(`/hosts/${hostId}/search-urls/events/samples${qs}`);
-  }
-
-  async getSearchEventsHistory(hostId: string, params?: DateRange): Promise<HistoryResponse> {
-    const qs = buildQueryString(undefined, params);
-    return this.get<HistoryResponse>(`/hosts/${hostId}/search-urls/events/history${qs}`);
-  }
-
-  // --- Important URLs ---
-
-  async getImportantUrls(hostId: string, params?: Pagination): Promise<ImportantUrlList> {
-    const qs = buildQueryString(params);
-    return this.get<ImportantUrlList>(`/hosts/${hostId}/important-urls${qs}`);
-  }
-
-  async getImportantUrlsHistory(hostId: string, params?: DateRange): Promise<HistoryResponse> {
-    const qs = buildQueryString(undefined, params);
-    return this.get<HistoryResponse>(`/hosts/${hostId}/important-urls/history${qs}`);
-  }
-
   // --- Search Queries ---
 
   async getSearchQueries(hostId: string, params: SearchQueryParams): Promise<SearchQueryResult> {
@@ -260,15 +182,6 @@ export class YandexWebmasterClient {
   async getPopularQueries(hostId: string, params: SearchQueryParams): Promise<SearchQueryResult> {
     const qs = this.buildSearchQueryString(params);
     return this.get<SearchQueryResult>(`/hosts/${hostId}/search-queries/popular${qs}`);
-  }
-
-  async getQueryHistory(hostId: string, queryId: string, params: SearchQueryParams): Promise<SearchQueryResult> {
-    const qs = this.buildSearchQueryString(params);
-    return this.get<SearchQueryResult>(`/hosts/${hostId}/search-queries/${queryId}/history${qs}`);
-  }
-
-  async queryAnalytics(hostId: string, body: QueryAnalyticsRequest): Promise<QueryAnalyticsResult> {
-    return this.post<QueryAnalyticsResult>(`/hosts/${hostId}/query-analytics/list`, body);
   }
 
   private buildSearchQueryString(params: SearchQueryParams): string {
@@ -285,37 +198,6 @@ export class YandexWebmasterClient {
     );
 
     return `?${merged.toString()}`;
-  }
-
-  // --- External Links ---
-
-  async getExternalLinks(hostId: string, params?: Pagination): Promise<ExternalLinkList> {
-    const qs = buildQueryString(params);
-    return this.get<ExternalLinkList>(`/hosts/${hostId}/links/external/samples${qs}`);
-  }
-
-  async getExternalLinksHistory(hostId: string, params?: DateRange): Promise<HistoryResponse> {
-    const qs = buildQueryString(undefined, params);
-    return this.get<HistoryResponse>(`/hosts/${hostId}/links/external/history${qs}`);
-  }
-
-  // --- Broken Internal Links ---
-
-  async getBrokenInternalLinks(hostId: string, params?: Pagination): Promise<BrokenLinkList> {
-    const qs = buildQueryString(params);
-    return this.get<BrokenLinkList>(`/hosts/${hostId}/links/internal/broken/samples${qs}`);
-  }
-
-  async getBrokenLinksHistory(hostId: string, params?: DateRange): Promise<HistoryResponse> {
-    const qs = buildQueryString(undefined, params);
-    return this.get<HistoryResponse>(`/hosts/${hostId}/links/internal/broken/history${qs}`);
-  }
-
-  // --- SQI ---
-
-  async getSQIHistory(hostId: string, params?: DateRange): Promise<SQIHistory> {
-    const qs = buildQueryString(undefined, params);
-    return this.get<SQIHistory>(`/hosts/${hostId}/sqi-history${qs}`);
   }
 
   // --- Diagnostics ---
@@ -336,10 +218,6 @@ export class YandexWebmasterClient {
   // было нельзя вовсе; квота по соседнему `recrawl/quota` при этом читалась,
   // и поломка выглядела как отказ прав. Идентификатор задания читается по
   // `recrawl/queue/{id}` — он и был единственным верным путём в этой группе.
-  async listRecrawlTasks(hostId: string): Promise<RecrawlTaskList> {
-    return this.get<RecrawlTaskList>(`/hosts/${hostId}/recrawl/queue`);
-  }
-
   async addRecrawlTask(hostId: string, url: string): Promise<RecrawlTask> {
     return this.post<RecrawlTask>(`/hosts/${hostId}/recrawl/queue`, { url });
   }
@@ -348,36 +226,4 @@ export class YandexWebmasterClient {
     return this.get<RecrawlTask>(`/hosts/${hostId}/recrawl/queue/${taskId}`);
   }
 
-  // --- Feeds ---
-
-  async listFeeds(hostId: string): Promise<FeedList> {
-    return this.get<FeedList>(`/hosts/${hostId}/feeds/list`);
-  }
-
-  async startFeedUpload(hostId: string, body: { url: string }): Promise<FeedUploadStatus> {
-    return this.post<FeedUploadStatus>(`/hosts/${hostId}/feeds/add/start`, body);
-  }
-
-  async getFeedUploadStatus(hostId: string): Promise<FeedUploadStatus> {
-    return this.get<FeedUploadStatus>(`/hosts/${hostId}/feeds/add/info`);
-  }
-
-  async batchAddFeeds(hostId: string, body: { urls: string[] }): Promise<BatchFeedResult> {
-    return this.post<BatchFeedResult>(`/hosts/${hostId}/feeds/batch/add`, body);
-  }
-
-  // --- Original Texts ---
-
-  async getOriginalTexts(hostId: string, params?: Pagination): Promise<OriginalTexts> {
-    const qs = buildQueryString(params);
-    return this.get<OriginalTexts>(`/hosts/${hostId}/original-texts${qs}`);
-  }
-
-  async addOriginalText(hostId: string, content: string): Promise<OriginalText> {
-    return this.post<OriginalText>(`/hosts/${hostId}/original-texts`, { content });
-  }
-
-  async getOriginalTextQuota(hostId: string): Promise<OriginalTextQuota> {
-    return this.get<OriginalTextQuota>(`/hosts/${hostId}/original-texts/quota`);
-  }
 }

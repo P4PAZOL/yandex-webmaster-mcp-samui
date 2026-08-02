@@ -1,6 +1,7 @@
 {
   "name": "yandex-webmaster-mcp-server",
   "version": "1.0.0",
+  "packageManager": "pnpm@10.29.1",
   "type": "module",
   "description": "MCP-сервер для Yandex Webmaster API v4 — 46 инструментов для управления сайтами через Model Context Protocol",
   "keywords": [
@@ -44,7 +45,6 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "beads-orchestration": "github:weselow/The-Claude-Protocol",
     "tsx": "^4.0.0",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"

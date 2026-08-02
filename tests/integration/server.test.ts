@@ -44,9 +44,31 @@ describe('Server integration', () => {
     expect(server).toBeDefined();
   });
 
-  it('registers all 40 tools', async () => {
+  // Набор инструментов зафиксирован точным списком, а не только проверками
+  // «содержит». Так тест ловит и пропажу нужного инструмента, и появление
+  // лишнего — например, если очередной merge из upstream вернёт вырезанное.
+  const EXPECTED_TOOLS = [
+    'ywm_add_sitemap',
+    'ywm_get_diagnostics',
+    'ywm_get_host_summary',
+    'ywm_get_indexing_history',
+    'ywm_get_indexing_samples',
+    'ywm_get_popular_queries',
+    'ywm_get_recrawl_quota',
+    'ywm_get_recrawl_task',
+    'ywm_get_search_queries',
+    'ywm_get_sitemap',
+    'ywm_list_hosts',
+    'ywm_list_sitemaps',
+    'ywm_list_user_sitemaps',
+    'ywm_submit_recrawl',
+  ];
+
+  it('registers exactly the 14 expected tools', async () => {
     const { tools } = await mcpClient.listTools();
-    expect(tools).toHaveLength(40);
+    const names = tools.map((t) => t.name).sort();
+
+    expect(names).toEqual(EXPECTED_TOOLS);
   });
 
   // Гейт форка: шесть деструктивных инструментов оригинала вырезаны физически.
@@ -68,88 +90,10 @@ describe('Server integration', () => {
     });
   });
 
-  describe('core tools are registered', () => {
-    const coreTools = [
-      'ywm_get_user',
-      'ywm_list_hosts',
-      'ywm_get_host',
-      'ywm_get_host_summary',
-      'ywm_get_verification',
-      'ywm_get_diagnostics',
-      'ywm_list_owners',
-    ];
-
-    it.each(coreTools)('registers %s', async (toolName) => {
-      const { tools } = await mcpClient.listTools();
-      const names = tools.map((t) => t.name);
-      expect(names).toContain(toolName);
-    });
-  });
-
-  describe('content tools are registered', () => {
-    const contentTools = [
-      'ywm_list_sitemaps',
-      'ywm_get_sitemap',
-      'ywm_add_sitemap',
-      'ywm_get_indexing_history',
-      'ywm_get_search_urls',
-      'ywm_get_important_urls',
-      'ywm_get_search_events_samples',
-      'ywm_get_search_events_history',
-      'ywm_get_search_urls_history',
-      'ywm_get_indexing_samples',
-      'ywm_get_important_urls_history',
-      'ywm_get_broken_internal_links',
-      'ywm_get_broken_links_history',
-      'ywm_list_user_sitemaps',
-      'ywm_get_user_sitemap',
-    ];
-
-    it.each(contentTools)('registers %s', async (toolName) => {
-      const { tools } = await mcpClient.listTools();
-      const names = tools.map((t) => t.name);
-      expect(names).toContain(toolName);
-    });
-  });
-
-  describe('analytics tools are registered', () => {
-    const analyticsTools = [
-      'ywm_get_search_queries',
-      'ywm_get_popular_queries',
-      'ywm_get_external_links',
-      'ywm_get_sqi_history',
-      'ywm_get_external_links_history',
-      'ywm_get_query_history',
-      'ywm_query_analytics',
-    ];
-
-    it.each(analyticsTools)('registers %s', async (toolName) => {
-      const { tools } = await mcpClient.listTools();
-      const names = tools.map((t) => t.name);
-      expect(names).toContain(toolName);
-    });
-  });
-
-  describe('action tools are registered', () => {
-    const actionTools = [
-      'ywm_get_recrawl_quota',
-      'ywm_list_recrawl_tasks',
-      'ywm_submit_recrawl',
-      'ywm_get_original_texts',
-      'ywm_add_original_text',
-      'ywm_get_original_text_quota',
-      'ywm_get_recrawl_task',
-      'ywm_list_feeds',
-      'ywm_start_feed_upload',
-      'ywm_get_feed_upload_status',
-      'ywm_batch_add_feeds',
-    ];
-
-    it.each(actionTools)('registers %s', async (toolName) => {
-      const { tools } = await mcpClient.listTools();
-      const names = tools.map((t) => t.name);
-      expect(names).toContain(toolName);
-    });
+  it.each(EXPECTED_TOOLS)('registers %s', async (toolName) => {
+    const { tools } = await mcpClient.listTools();
+    const names = tools.map((t) => t.name);
+    expect(names).toContain(toolName);
   });
 
   it('each tool has a description', async () => {

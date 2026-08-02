@@ -7,7 +7,6 @@ import { registerCoreTools } from '../../src/tools/core.js';
 
 function createMockClient(overrides: Partial<YandexWebmasterClient> = {}): YandexWebmasterClient {
   return {
-    getUser: vi.fn().mockResolvedValue({ user_id: 12345 }),
     getUserId: vi.fn().mockResolvedValue(12345),
     listHosts: vi.fn().mockResolvedValue({
       hosts: [{
@@ -17,19 +16,6 @@ function createMockClient(overrides: Partial<YandexWebmasterClient> = {}): Yande
         verified: true,
       }],
     }),
-    getHost: vi.fn().mockResolvedValue({
-      host_id: 'https:example.com:443',
-      ascii_host_url: 'https://example.com/',
-      unicode_host_url: 'https://example.com/',
-      verified: true,
-    }),
-    addHost: vi.fn().mockResolvedValue({
-      host_id: 'https:newsite.com:443',
-      ascii_host_url: 'https://newsite.com/',
-      unicode_host_url: 'https://newsite.com/',
-      verified: false,
-    }),
-    deleteHost: vi.fn().mockResolvedValue(undefined),
     getHostSummary: vi.fn().mockResolvedValue({
       host_id: 'https:example.com:443',
       sqi: 50,
@@ -37,21 +23,8 @@ function createMockClient(overrides: Partial<YandexWebmasterClient> = {}): Yande
       excluded_pages_count: 5,
       site_problems: [],
     }),
-    getVerificationStatus: vi.fn().mockResolvedValue({
-      verification_type: 'DNS',
-      verified: true,
-      verification_state: 'VERIFIED',
-    }),
-    verifyHost: vi.fn().mockResolvedValue({
-      verification_type: 'DNS',
-      verified: true,
-      verification_state: 'VERIFIED',
-    }),
     getDiagnostics: vi.fn().mockResolvedValue({
       problems: [{ problem_id: 'PROBLEM_1', severity: 'WARNING' }],
-    }),
-    listOwners: vi.fn().mockResolvedValue({
-      owners: [{ user_id: 1, user_name: 'admin', verification_type: 'DNS' }],
     }),
     resolveHostId: vi.fn().mockImplementation((id?: string) => id ?? 'https:example.com:443'),
     resolveDefaultHost: vi.fn().mockResolvedValue('https:example.com:443'),
@@ -94,17 +67,15 @@ describe('Core MCP Tools', () => {
   });
 
   describe('tool registration', () => {
-    it('registers all 7 core tools', async () => {
+    it('registers exactly the 3 core tools', async () => {
       const { tools } = await mcpClient.listTools();
-      const toolNames = tools.map((t) => t.name);
+      const toolNames = tools.map((t) => t.name).sort();
 
-      expect(toolNames).toContain('ywm_get_user');
-      expect(toolNames).toContain('ywm_list_hosts');
-      expect(toolNames).toContain('ywm_get_host');
-      expect(toolNames).toContain('ywm_get_host_summary');
-      expect(toolNames).toContain('ywm_get_verification');
-      expect(toolNames).toContain('ywm_get_diagnostics');
-      expect(toolNames).toContain('ywm_list_owners');
+      expect(toolNames).toEqual([
+        'ywm_get_diagnostics',
+        'ywm_get_host_summary',
+        'ywm_list_hosts',
+      ]);
     });
 
     it('does not register destructive core tools', async () => {
@@ -114,20 +85,6 @@ describe('Core MCP Tools', () => {
       expect(toolNames).not.toContain('ywm_add_host');
       expect(toolNames).not.toContain('ywm_delete_host');
       expect(toolNames).not.toContain('ywm_verify_host');
-    });
-  });
-
-  describe('ywm_get_user', () => {
-    it('returns user info', async () => {
-      const result = await mcpClient.callTool({ name: 'ywm_get_user', arguments: {} });
-
-      expect(result.isError).toBeFalsy();
-      expect(result.content).toHaveLength(1);
-
-      const text = (result.content as Array<{ type: string; text: string }>)[0].text;
-      const parsed = JSON.parse(text);
-      expect(parsed.user_id).toBe(12345);
-      expect(mockApiClient.getUser).toHaveBeenCalled();
     });
   });
 
@@ -141,32 +98,6 @@ describe('Core MCP Tools', () => {
       expect(parsed.hosts).toHaveLength(1);
       expect(parsed.hosts[0].host_id).toBe('https:example.com:443');
       expect(mockApiClient.listHosts).toHaveBeenCalled();
-    });
-  });
-
-  describe('ywm_get_host', () => {
-    it('returns host details with explicit host_id', async () => {
-      const result = await mcpClient.callTool({
-        name: 'ywm_get_host',
-        arguments: { host_id: 'https:mysite.com:443' },
-      });
-
-      expect(result.isError).toBeFalsy();
-      const text = (result.content as Array<{ type: string; text: string }>)[0].text;
-      const parsed = JSON.parse(text);
-      expect(parsed.host_id).toBe('https:example.com:443');
-      expect(mockApiClient.resolveHostId).toHaveBeenCalledWith('https:mysite.com:443');
-      expect(mockApiClient.getHost).toHaveBeenCalledWith('https:mysite.com:443');
-    });
-
-    it('uses default host when no host_id provided', async () => {
-      const result = await mcpClient.callTool({
-        name: 'ywm_get_host',
-        arguments: {},
-      });
-
-      expect(result.isError).toBeFalsy();
-      expect(mockApiClient.resolveHostId).toHaveBeenCalledWith(undefined);
     });
   });
 
@@ -186,22 +117,6 @@ describe('Core MCP Tools', () => {
     });
   });
 
-  describe('ywm_get_verification', () => {
-    it('returns verification status', async () => {
-      const result = await mcpClient.callTool({
-        name: 'ywm_get_verification',
-        arguments: { host_id: 'https:example.com:443' },
-      });
-
-      expect(result.isError).toBeFalsy();
-      const text = (result.content as Array<{ type: string; text: string }>)[0].text;
-      const parsed = JSON.parse(text);
-      expect(parsed.verified).toBe(true);
-      expect(parsed.verification_state).toBe('VERIFIED');
-      expect(mockApiClient.getVerificationStatus).toHaveBeenCalled();
-    });
-  });
-
   describe('ywm_get_diagnostics', () => {
     it('returns diagnostics info', async () => {
       const result = await mcpClient.callTool({
@@ -218,31 +133,15 @@ describe('Core MCP Tools', () => {
     });
   });
 
-  describe('ywm_list_owners', () => {
-    it('returns owners list', async () => {
-      const result = await mcpClient.callTool({
-        name: 'ywm_list_owners',
-        arguments: { host_id: 'https:example.com:443' },
-      });
-
-      expect(result.isError).toBeFalsy();
-      const text = (result.content as Array<{ type: string; text: string }>)[0].text;
-      const parsed = JSON.parse(text);
-      expect(parsed.owners).toHaveLength(1);
-      expect(parsed.owners[0].user_name).toBe('admin');
-      expect(mockApiClient.listOwners).toHaveBeenCalled();
-    });
-  });
-
   describe('error handling', () => {
     it('returns isError: true when client method throws', async () => {
       const failingClient = createMockClient({
-        getUser: vi.fn().mockRejectedValue(new Error('API token expired')),
+        listHosts: vi.fn().mockRejectedValue(new Error('API token expired')),
       });
       const env = await setupTestEnv(failingClient);
 
       try {
-        const result = await env.client.callTool({ name: 'ywm_get_user', arguments: {} });
+        const result = await env.client.callTool({ name: 'ywm_list_hosts', arguments: {} });
 
         expect(result.isError).toBe(true);
         const text = (result.content as Array<{ type: string; text: string }>)[0].text;
@@ -280,7 +179,7 @@ describe('Core MCP Tools', () => {
       const env = await setupTestEnv(failingClient);
 
       try {
-        const result = await env.client.callTool({ name: 'ywm_get_host', arguments: {} });
+        const result = await env.client.callTool({ name: 'ywm_get_host_summary', arguments: {} });
 
         expect(result.isError).toBe(true);
         const text = (result.content as Array<{ type: string; text: string }>)[0].text;

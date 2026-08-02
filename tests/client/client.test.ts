@@ -220,17 +220,17 @@ describe('YandexWebmasterClient', () => {
         mockResponse(401, { error_code: 'AUTH', error_message: 'Unauthorized' }),
       );
 
-      await expect(client.getUser()).rejects.toThrow(AuthError);
+      await expect(client.getUserId()).rejects.toThrow(AuthError);
     });
 
     it('throws NotFoundError on 404 response', async () => {
       fetchMock.mockResolvedValueOnce(mockResponse(200, { user_id: 1 }));
 
       fetchMock.mockResolvedValueOnce(
-        mockResponse(404, { error_code: 'NOT_FOUND', error_message: 'Host not found' }),
+        mockResponse(404, { error_code: 'NOT_FOUND', error_message: 'Sitemap not found' }),
       );
 
-      await expect(client.getHost('bad-id')).rejects.toThrow(NotFoundError);
+      await expect(client.getSitemap('h1', 'bad-id')).rejects.toThrow(NotFoundError);
     });
 
     it('throws RateLimitError on 429 response', async () => {
@@ -238,7 +238,7 @@ describe('YandexWebmasterClient', () => {
         mockResponse(429, { error_message: 'Rate limit exceeded' }),
       );
 
-      await expect(client.getUser()).rejects.toThrow(RateLimitError);
+      await expect(client.getUserId()).rejects.toThrow(RateLimitError);
     });
 
     it('throws ServerError on 500 response', async () => {
@@ -246,7 +246,7 @@ describe('YandexWebmasterClient', () => {
         mockResponse(500, { error_message: 'Internal server error' }),
       );
 
-      await expect(client.getUser()).rejects.toThrow(ServerError);
+      await expect(client.getUserId()).rejects.toThrow(ServerError);
     });
 
     it('throws ValidationError on 400 response', async () => {
@@ -313,10 +313,10 @@ describe('YandexWebmasterClient', () => {
       expect(calledUrl).toContain('date_to=2024-02-01');
     });
 
-    it('getSearchUrls appends pagination params', async () => {
+    it('getIndexingSamples appends pagination params', async () => {
       fetchMock.mockResolvedValueOnce(mockResponse(200, { samples: [] }));
 
-      await client.getSearchUrls('h1', { offset: 10, limit: 50 });
+      await client.getIndexingSamples('h1', { offset: 10, limit: 50 });
 
       const calledUrl = fetchMock.mock.calls[fetchMock.mock.calls.length - 1][0] as string;
       expect(calledUrl).toContain('offset=10');
@@ -357,17 +357,6 @@ describe('YandexWebmasterClient', () => {
       );
     });
 
-    it('listRecrawlTasks reads the recrawl queue path', async () => {
-      fetchMock.mockResolvedValueOnce(mockResponse(200, { tasks: [] }));
-
-      await client.listRecrawlTasks('h1');
-
-      expect(fetchMock).toHaveBeenLastCalledWith(
-        'https://api.test.com/v4/user/10/hosts/h1/recrawl/queue',
-        expect.anything(),
-      );
-    });
-
     it('getRecrawlTask reads a single task under the queue path', async () => {
       fetchMock.mockResolvedValueOnce(mockResponse(200, {
         task_id: 't1',
@@ -383,35 +372,13 @@ describe('YandexWebmasterClient', () => {
       );
     });
 
-    it('addOriginalText sends POST with content body', async () => {
-      fetchMock.mockResolvedValueOnce(mockResponse(200, {
-        text_id: 'txt1',
-        content: 'My original text',
-        added_date: '2024-01-01',
-      }));
+    it('getDiagnostics reads the diagnostics path', async () => {
+      fetchMock.mockResolvedValueOnce(mockResponse(200, { problems: [] }));
 
-      const result = await client.addOriginalText('h1', 'My original text');
+      await client.getDiagnostics('h1');
 
-      expect(result.text_id).toBe('txt1');
       expect(fetchMock).toHaveBeenLastCalledWith(
-        'https://api.test.com/v4/user/10/hosts/h1/original-texts',
-        expect.objectContaining({
-          body: JSON.stringify({ content: 'My original text' }),
-        }),
-      );
-    });
-
-    it('getVerificationStatus reads verification state without changing it', async () => {
-      fetchMock.mockResolvedValueOnce(mockResponse(200, {
-        verification_type: 'DNS',
-        verified: true,
-      }));
-
-      const result = await client.getVerificationStatus('h1');
-
-      expect(result.verified).toBe(true);
-      expect(fetchMock).toHaveBeenLastCalledWith(
-        'https://api.test.com/v4/user/10/hosts/h1/owner-verification',
+        'https://api.test.com/v4/user/10/hosts/h1/diagnostics',
         expect.objectContaining({ method: 'GET' }),
       );
     });
