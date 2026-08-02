@@ -18,14 +18,6 @@ function mockResponse(status: number, body: unknown): Response {
   } as Response;
 }
 
-function mock204Response(): Response {
-  return {
-    ok: true,
-    status: 204,
-    json: () => Promise.reject(new Error('no body')),
-  } as Response;
-}
-
 describe('YandexWebmasterClient', () => {
   let client: YandexWebmasterClient;
   let fetchMock: ReturnType<typeof vi.fn>;
@@ -184,19 +176,17 @@ describe('YandexWebmasterClient', () => {
       await client.getUserId();
 
       fetchMock.mockResolvedValueOnce(mockResponse(200, {
-        host_id: 'new',
-        ascii_host_url: 'https://new.com/',
-        unicode_host_url: 'https://new.com/',
-        verified: false,
+        sitemap_id: 's1',
+        url: 'https://example.com/sitemap.xml',
       }));
 
-      await client.addHost('https://new.com/');
+      await client.addSitemap('h1', 'https://example.com/sitemap.xml');
 
       expect(fetchMock).toHaveBeenLastCalledWith(
-        'https://api.test.com/v4/user/42/hosts',
+        'https://api.test.com/v4/user/42/hosts/h1/user-added-sitemaps',
         expect.objectContaining({
           method: 'POST',
-          body: JSON.stringify({ host_url: 'https://new.com/' }),
+          body: JSON.stringify({ url: 'https://example.com/sitemap.xml' }),
           headers: expect.objectContaining({
             'Content-Type': 'application/json',
           }),
@@ -204,17 +194,21 @@ describe('YandexWebmasterClient', () => {
       );
     });
 
-    it('constructs DELETE requests', async () => {
-      await client.getUserId();
+    // Гейт форка: деструктивные операции вырезаны, и DELETE-хелперов в клиенте
+    // нет вовсе. Тест держит это свойство — если метод вернут, тест упадёт.
+    it('exposes no destructive API methods', () => {
+      const removed = [
+        'addHost',
+        'deleteHost',
+        'verifyHost',
+        'deleteSitemap',
+        'deleteOriginalText',
+        'batchRemoveFeeds',
+      ];
 
-      fetchMock.mockResolvedValueOnce(mock204Response());
-
-      await client.deleteHost('host-123');
-
-      expect(fetchMock).toHaveBeenLastCalledWith(
-        'https://api.test.com/v4/user/42/hosts/host-123',
-        expect.objectContaining({ method: 'DELETE' }),
-      );
+      for (const method of removed) {
+        expect(client[method as keyof typeof client]).toBeUndefined();
+      }
     });
   });
 
@@ -263,7 +257,7 @@ describe('YandexWebmasterClient', () => {
       );
 
       await expect(
-        client.addHost(''),
+        client.addSitemap('h1', ''),
       ).rejects.toThrow(ValidationError);
     });
   });
@@ -303,17 +297,6 @@ describe('YandexWebmasterClient', () => {
           method: 'POST',
           body: JSON.stringify({ url: 'https://ex.com/sitemap.xml' }),
         }),
-      );
-    });
-
-    it('deleteSitemap sends DELETE', async () => {
-      fetchMock.mockResolvedValueOnce(mock204Response());
-
-      await client.deleteSitemap('h1', 's1');
-
-      expect(fetchMock).toHaveBeenLastCalledWith(
-        'https://api.test.com/v4/user/10/hosts/h1/user-added-sitemaps/s1',
-        expect.objectContaining({ method: 'DELETE' }),
       );
     });
 
@@ -418,32 +401,18 @@ describe('YandexWebmasterClient', () => {
       );
     });
 
-    it('deleteOriginalText sends DELETE', async () => {
-      fetchMock.mockResolvedValueOnce(mock204Response());
-
-      await client.deleteOriginalText('h1', 'txt1');
-
-      expect(fetchMock).toHaveBeenLastCalledWith(
-        'https://api.test.com/v4/user/10/hosts/h1/original-texts/txt1',
-        expect.objectContaining({ method: 'DELETE' }),
-      );
-    });
-
-    it('verifyHost sends POST with verification_type body', async () => {
+    it('getVerificationStatus reads verification state without changing it', async () => {
       fetchMock.mockResolvedValueOnce(mockResponse(200, {
         verification_type: 'DNS',
         verified: true,
       }));
 
-      const result = await client.verifyHost('h1', 'DNS');
+      const result = await client.getVerificationStatus('h1');
 
       expect(result.verified).toBe(true);
       expect(fetchMock).toHaveBeenLastCalledWith(
         'https://api.test.com/v4/user/10/hosts/h1/owner-verification',
-        expect.objectContaining({
-          method: 'POST',
-          body: JSON.stringify({ verification_type: 'DNS' }),
-        }),
+        expect.objectContaining({ method: 'GET' }),
       );
     });
   });

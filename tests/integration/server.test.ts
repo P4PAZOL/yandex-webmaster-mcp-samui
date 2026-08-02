@@ -44,9 +44,28 @@ describe('Server integration', () => {
     expect(server).toBeDefined();
   });
 
-  it('registers all 46 tools', async () => {
+  it('registers all 40 tools', async () => {
     const { tools } = await mcpClient.listTools();
-    expect(tools).toHaveLength(46);
+    expect(tools).toHaveLength(40);
+  });
+
+  // Гейт форка: шесть деструктивных инструментов оригинала вырезаны физически.
+  // Если любой из них вернётся в регистрацию — этот тест упадёт.
+  describe('destructive tools are not registered', () => {
+    const removedTools = [
+      'ywm_add_host',
+      'ywm_delete_host',
+      'ywm_verify_host',
+      'ywm_delete_sitemap',
+      'ywm_batch_remove_feeds',
+      'ywm_delete_original_text',
+    ];
+
+    it.each(removedTools)('does not register %s', async (toolName) => {
+      const { tools } = await mcpClient.listTools();
+      const names = tools.map((t) => t.name);
+      expect(names).not.toContain(toolName);
+    });
   });
 
   describe('core tools are registered', () => {
@@ -54,11 +73,8 @@ describe('Server integration', () => {
       'ywm_get_user',
       'ywm_list_hosts',
       'ywm_get_host',
-      'ywm_add_host',
-      'ywm_delete_host',
       'ywm_get_host_summary',
       'ywm_get_verification',
-      'ywm_verify_host',
       'ywm_get_diagnostics',
       'ywm_list_owners',
     ];
@@ -75,7 +91,6 @@ describe('Server integration', () => {
       'ywm_list_sitemaps',
       'ywm_get_sitemap',
       'ywm_add_sitemap',
-      'ywm_delete_sitemap',
       'ywm_get_indexing_history',
       'ywm_get_search_urls',
       'ywm_get_important_urls',
@@ -122,14 +137,12 @@ describe('Server integration', () => {
       'ywm_submit_recrawl',
       'ywm_get_original_texts',
       'ywm_add_original_text',
-      'ywm_delete_original_text',
       'ywm_get_original_text_quota',
       'ywm_get_recrawl_task',
       'ywm_list_feeds',
       'ywm_start_feed_upload',
       'ywm_get_feed_upload_status',
       'ywm_batch_add_feeds',
-      'ywm_batch_remove_feeds',
     ];
 
     it.each(actionTools)('registers %s', async (toolName) => {

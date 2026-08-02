@@ -226,31 +226,6 @@ describe('Action tools', () => {
     });
   });
 
-  describe('ywm_delete_original_text', () => {
-    it('deletes an original text and returns success message', async () => {
-      const result = await callTool(client, 'ywm_delete_original_text', {
-        host_id: 'h1',
-        text_id: 'txt1',
-      });
-
-      expect(getTextContent(result)).toBe('Successfully deleted.');
-      expect(result.isError).toBeUndefined();
-      expect(mockClient.deleteOriginalText).toHaveBeenCalledWith('h1', 'txt1');
-    });
-
-    it('returns error when client throws', async () => {
-      mockClient.deleteOriginalText.mockRejectedValueOnce(new Error('Delete failed'));
-
-      const result = await callTool(client, 'ywm_delete_original_text', {
-        host_id: 'h1',
-        text_id: 'bad-id',
-      });
-
-      expect(result.isError).toBe(true);
-      expect(getTextContent(result)).toContain('Delete failed');
-    });
-  });
-
   describe('ywm_get_original_text_quota', () => {
     it('returns original text quota as JSON', async () => {
       const result = await callTool(client, 'ywm_get_original_text_quota', { host_id: 'h1' });
@@ -393,30 +368,4 @@ describe('Action tools', () => {
     });
   });
 
-  describe('ywm_batch_remove_feeds', () => {
-    it('batch removes feeds and returns result', async () => {
-      const result = await callTool(client, 'ywm_batch_remove_feeds', {
-        host_id: 'h1',
-        urls: ['https://example.com/feed1.xml'],
-      });
-      const parsed = JSON.parse(getTextContent(result));
-
-      expect(parsed.removed).toBe(1);
-      expect(mockClient.batchRemoveFeeds).toHaveBeenCalledWith('h1', {
-        urls: ['https://example.com/feed1.xml'],
-      });
-    });
-
-    it('returns error when client throws', async () => {
-      mockClient.batchRemoveFeeds.mockRejectedValueOnce(new Error('Batch remove failed'));
-
-      const result = await callTool(client, 'ywm_batch_remove_feeds', {
-        host_id: 'h1',
-        urls: ['https://example.com/bad.xml'],
-      });
-
-      expect(result.isError).toBe(true);
-      expect(getTextContent(result)).toContain('Batch remove failed');
-    });
-  });
 });

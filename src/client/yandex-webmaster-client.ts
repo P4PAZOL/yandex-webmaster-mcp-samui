@@ -145,15 +145,10 @@ export class YandexWebmasterClient {
     return this.request<T>('POST', fullPath, body);
   }
 
-  private async del(path: string): Promise<void> {
-    const fullPath = await this.userPath(path);
-    await this.request<void>('DELETE', fullPath);
-  }
-
-  private async delWithBody<T>(path: string, body: unknown): Promise<T> {
-    const fullPath = await this.userPath(path);
-    return this.request<T>('DELETE', fullPath, body);
-  }
+  // Хелперов для DELETE здесь намеренно нет. Все деструктивные операции
+  // Вебмастера (удаление хоста, карты сайта, оригинального текста, фидов)
+  // вырезаны из этого форка, поэтому клиент физически не умеет отправлять
+  // DELETE — ошибка или галлюцинация агента не может ничего снести.
 
   // --- User ---
 
@@ -171,14 +166,6 @@ export class YandexWebmasterClient {
     return this.get<Host>(`/hosts/${hostId}`);
   }
 
-  async addHost(hostUrl: string): Promise<Host> {
-    return this.post<Host>('/hosts', { host_url: hostUrl });
-  }
-
-  async deleteHost(hostId: string): Promise<void> {
-    return this.del(`/hosts/${hostId}`);
-  }
-
   async getHostSummary(hostId: string): Promise<HostSummary> {
     return this.get<HostSummary>(`/hosts/${hostId}/summary`);
   }
@@ -187,13 +174,6 @@ export class YandexWebmasterClient {
 
   async getVerificationStatus(hostId: string): Promise<VerificationInfo> {
     return this.get<VerificationInfo>(`/hosts/${hostId}/owner-verification`);
-  }
-
-  async verifyHost(hostId: string, verificationType: string): Promise<VerificationInfo> {
-    return this.post<VerificationInfo>(
-      `/hosts/${hostId}/owner-verification`,
-      { verification_type: verificationType },
-    );
   }
 
   // --- Owners ---
@@ -214,10 +194,6 @@ export class YandexWebmasterClient {
 
   async addSitemap(hostId: string, url: string): Promise<Sitemap> {
     return this.post<Sitemap>(`/hosts/${hostId}/user-added-sitemaps`, { url });
-  }
-
-  async deleteSitemap(hostId: string, sitemapId: string): Promise<void> {
-    return this.del(`/hosts/${hostId}/user-added-sitemaps/${sitemapId}`);
   }
 
   async listUserSitemaps(hostId: string): Promise<SitemapList> {
@@ -390,10 +366,6 @@ export class YandexWebmasterClient {
     return this.post<BatchFeedResult>(`/hosts/${hostId}/feeds/batch/add`, body);
   }
 
-  async batchRemoveFeeds(hostId: string, body: { urls: string[] }): Promise<BatchFeedResult> {
-    return this.delWithBody<BatchFeedResult>(`/hosts/${hostId}/feeds/batch/remove`, body);
-  }
-
   // --- Original Texts ---
 
   async getOriginalTexts(hostId: string, params?: Pagination): Promise<OriginalTexts> {
@@ -403,10 +375,6 @@ export class YandexWebmasterClient {
 
   async addOriginalText(hostId: string, content: string): Promise<OriginalText> {
     return this.post<OriginalText>(`/hosts/${hostId}/original-texts`, { content });
-  }
-
-  async deleteOriginalText(hostId: string, textId: string): Promise<void> {
-    return this.del(`/hosts/${hostId}/original-texts/${textId}`);
   }
 
   async getOriginalTextQuota(hostId: string): Promise<OriginalTextQuota> {

@@ -94,20 +94,26 @@ describe('Core MCP Tools', () => {
   });
 
   describe('tool registration', () => {
-    it('registers all 10 core tools', async () => {
+    it('registers all 7 core tools', async () => {
       const { tools } = await mcpClient.listTools();
       const toolNames = tools.map((t) => t.name);
 
       expect(toolNames).toContain('ywm_get_user');
       expect(toolNames).toContain('ywm_list_hosts');
       expect(toolNames).toContain('ywm_get_host');
-      expect(toolNames).toContain('ywm_add_host');
-      expect(toolNames).toContain('ywm_delete_host');
       expect(toolNames).toContain('ywm_get_host_summary');
       expect(toolNames).toContain('ywm_get_verification');
-      expect(toolNames).toContain('ywm_verify_host');
       expect(toolNames).toContain('ywm_get_diagnostics');
       expect(toolNames).toContain('ywm_list_owners');
+    });
+
+    it('does not register destructive core tools', async () => {
+      const { tools } = await mcpClient.listTools();
+      const toolNames = tools.map((t) => t.name);
+
+      expect(toolNames).not.toContain('ywm_add_host');
+      expect(toolNames).not.toContain('ywm_delete_host');
+      expect(toolNames).not.toContain('ywm_verify_host');
     });
   });
 
@@ -164,35 +170,6 @@ describe('Core MCP Tools', () => {
     });
   });
 
-  describe('ywm_add_host', () => {
-    it('adds a host and returns the result', async () => {
-      const result = await mcpClient.callTool({
-        name: 'ywm_add_host',
-        arguments: { host_url: 'https://newsite.com' },
-      });
-
-      expect(result.isError).toBeFalsy();
-      const text = (result.content as Array<{ type: string; text: string }>)[0].text;
-      const parsed = JSON.parse(text);
-      expect(parsed.host_id).toBe('https:newsite.com:443');
-      expect(mockApiClient.addHost).toHaveBeenCalledWith('https://newsite.com');
-    });
-  });
-
-  describe('ywm_delete_host', () => {
-    it('deletes a host and returns success message', async () => {
-      const result = await mcpClient.callTool({
-        name: 'ywm_delete_host',
-        arguments: { host_id: 'https:example.com:443' },
-      });
-
-      expect(result.isError).toBeFalsy();
-      const text = (result.content as Array<{ type: string; text: string }>)[0].text;
-      expect(text).toBe('Host deleted successfully');
-      expect(mockApiClient.deleteHost).toHaveBeenCalledWith('https:example.com:443');
-    });
-  });
-
   describe('ywm_get_host_summary', () => {
     it('returns host summary', async () => {
       const result = await mcpClient.callTool({
@@ -222,21 +199,6 @@ describe('Core MCP Tools', () => {
       expect(parsed.verified).toBe(true);
       expect(parsed.verification_state).toBe('VERIFIED');
       expect(mockApiClient.getVerificationStatus).toHaveBeenCalled();
-    });
-  });
-
-  describe('ywm_verify_host', () => {
-    it('starts verification and returns result', async () => {
-      const result = await mcpClient.callTool({
-        name: 'ywm_verify_host',
-        arguments: { host_id: 'https:example.com:443', verification_type: 'DNS' },
-      });
-
-      expect(result.isError).toBeFalsy();
-      const text = (result.content as Array<{ type: string; text: string }>)[0].text;
-      const parsed = JSON.parse(text);
-      expect(parsed.verification_type).toBe('DNS');
-      expect(mockApiClient.verifyHost).toHaveBeenCalledWith('https:example.com:443', 'DNS');
     });
   });
 

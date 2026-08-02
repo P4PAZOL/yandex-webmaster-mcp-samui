@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { YandexWebmasterClient } from '../client/index.js';
 import { optionalHostIdSchema } from '../utils/schemas.js';
-import { errorResult, jsonResult, textResult } from '../utils/tool-response.js';
+import { errorResult, jsonResult } from '../utils/tool-response.js';
 
 export function registerActionTools(server: McpServer, client: YandexWebmasterClient): void {
   // --- Recrawl tools ---
@@ -91,24 +91,6 @@ export function registerActionTools(server: McpServer, client: YandexWebmasterCl
         const hostId = client.resolveHostId(params.host_id);
         const result = await client.addOriginalText(hostId, params.content);
         return jsonResult(result);
-      } catch (error) {
-        return errorResult(error);
-      }
-    },
-  );
-
-  server.tool(
-    'ywm_delete_original_text',
-    'Delete an original text',
-    {
-      host_id: optionalHostIdSchema,
-      text_id: z.string().describe('Text ID'),
-    },
-    async (params) => {
-      try {
-        const hostId = client.resolveHostId(params.host_id);
-        await client.deleteOriginalText(hostId, params.text_id);
-        return textResult('Successfully deleted.');
       } catch (error) {
         return errorResult(error);
       }
@@ -218,21 +200,4 @@ export function registerActionTools(server: McpServer, client: YandexWebmasterCl
     },
   );
 
-  server.tool(
-    'ywm_batch_remove_feeds',
-    'Batch remove feeds',
-    {
-      host_id: optionalHostIdSchema,
-      urls: z.array(z.string()).describe('Feed URLs'),
-    },
-    async (params) => {
-      try {
-        const hostId = client.resolveHostId(params.host_id);
-        const result = await client.batchRemoveFeeds(hostId, { urls: params.urls });
-        return jsonResult(result);
-      } catch (error) {
-        return errorResult(error);
-      }
-    },
-  );
 }

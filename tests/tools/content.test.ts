@@ -148,37 +148,6 @@ describe('Content Tools', () => {
     });
   });
 
-  // --- ywm_delete_sitemap ---
-
-  describe('ywm_delete_sitemap', () => {
-    it('deletes sitemap and returns success', async () => {
-      mockClient.deleteSitemap.mockResolvedValue(undefined);
-
-      const { client } = await setupTestServer(mockClient);
-      const result = await client.callTool({
-        name: 'ywm_delete_sitemap',
-        arguments: { sitemap_id: 's1' },
-      });
-
-      expect((result.content as any)[0].text).toBe('Sitemap deleted successfully');
-      expect(result.isError).toBeUndefined();
-      expect(mockClient.deleteSitemap).toHaveBeenCalledWith('default-host', 's1');
-    });
-
-    it('returns error on failure', async () => {
-      mockClient.deleteSitemap.mockRejectedValue(new Error('Forbidden'));
-
-      const { client } = await setupTestServer(mockClient);
-      const result = await client.callTool({
-        name: 'ywm_delete_sitemap',
-        arguments: { sitemap_id: 's1' },
-      });
-
-      expect(result.isError).toBe(true);
-      expect((result.content as any)[0].text).toContain('Forbidden');
-    });
-  });
-
   // --- ywm_get_indexing_history ---
 
   describe('ywm_get_indexing_history', () => {
